@@ -1,6 +1,6 @@
 # Python vswhere
 
-This module provides an interface to Microsoft's Visual Studio locator too,
+This module provides an interface to Microsoft's Visual Studio locator tool,
 [vswhere](https://github.com/Microsoft/vswhere).
 
 If Visual Studio 15.2 or later has been installed, this will use the vswhere
@@ -17,6 +17,13 @@ the given options, and `find_first` returns only the first result.
 If you are only interested in the latest version of Visual Studio, use
 `get_latest`. To get just the installation path, use `get_latest_path`. To get
 just the version number, use `get_latest_version` or `get_latest_major_version`.
+
+If you want to use your own version of vswhere.exe instead of the one installed
+with Visual Studio, use `set_vswhere_path` to provide its location.
+
+If you want to use a mirror instead of GitHub to download vswhere.exe, for
+example when on an intranet that does not have access to GitHub, use
+`set_download_mirror` and provide the URL of the mirror.
 
 ## Examples
 

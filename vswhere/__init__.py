@@ -11,13 +11,21 @@ import os
 import shutil
 import subprocess
 
-__version__ = '1.0'
+__version__ = '1.1'
 __author__ = 'Joel Spadin'
-
-DEFAULT_LOCATION = os.path.join(os.environ['ProgramFiles(x86)'], 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
-DOWNLOAD_LOCATION = os.path.join(os.path.dirname(__file__), 'vswhere.exe')
+__license__ = 'MIT'
 
 LATEST_RELEASE_ENDPOINT = 'https://api.github.com/repos/Microsoft/vswhere/releases/latest'
+DOWNLOAD_PATH = os.path.join(os.path.dirname(__file__), 'vswhere.exe')
+
+if 'ProgramFiles(x86)' in os.environ:
+    DEFAULT_PATH = os.path.join(os.environ['ProgramFiles(x86)'], 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
+else:
+    DEFAULT_PATH = None
+
+alternate_path = None
+download_mirror_url = None
+
 
 def execute(args):
     """
@@ -31,7 +39,7 @@ def execute(args):
     """
     is_property = '-property' in args
 
-    args = [get_vswhere(), '-utf8'] + args
+    args = [get_vswhere_path(), '-utf8'] + args
 
     if not is_property:
         args.extend(['-format', 'json'])
@@ -149,48 +157,76 @@ def get_latest_version():
 
 def get_latest_major_version():
     """
-    Get the major version of the latest installed version of Visual Studio as an integer.
+    Get the major version of the latest installed version of Visual Studio as an int.
 
     Returns 0 if no installations could be found.
     """
     return int(next(iter(get_latest_version().split('.')), '0'))
 
 
-def get_vswhere():
+def get_vswhere_path():
     """
-    Get the location of the vswhere executable.
+    Get the path to vshwere.exe.
 
-    If vswhere is not already installed as part of Visual Studio, the latest
-    release will be downloaded and stored alongside this script.
+    If vswhere is not already installed as part of Visual Studio, and no
+    alternate path is given using `set_vswhere_path()`, the latest release will
+    be downloaded and stored alongside this script.
     """
-    if os.path.exists(DEFAULT_LOCATION):
-        return DEFAULT_LOCATION
+    if alternate_path and os.path.exists(alternate_path):
+        return alternate_path
 
-    if os.path.exists(DOWNLOAD_LOCATION):
-        return DOWNLOAD_LOCATION
+    if DEFAULT_PATH and os.path.exists(DEFAULT_PATH):
+        return DEFAULT_PATH
+
+    if os.path.exists(DOWNLOAD_PATH):
+        return DOWNLOAD_PATH
 
     _download_vswhere()
-    return DOWNLOAD_LOCATION
+    return DOWNLOAD_PATH
+
+
+def set_vswhere_path(path):
+    """
+    Set the path to vswhere.exe.
+
+    If this is set, it overrides any version installed as part of Visual Studio.
+    """
+    global alternate_path
+    alternate_path = path
+
+
+def set_download_mirror(url):
+    """
+    Set a URL from which vswhere.exe should be downloaded if it is not already
+    installed as part of Visual Studio and no alternate path is given using
+    `set_vswhere_path()`.
+    """
+    global download_mirror_url
+    download_mirror_url = url
 
 
 def _download_vswhere():
     """
-    Download vswhere to DOWNLOAD_LOCATION.
+    Download vswhere to DOWNLOAD_PATH.
     """
+    print('downloading from', _get_latest_release_url())
     try:
         from urllib.request import urlopen
-        with urlopen(_get_latest_release_url()) as response, open(DOWNLOAD_LOCATION, 'wb') as outfile:
+        with urlopen(_get_latest_release_url()) as response, open(DOWNLOAD_PATH, 'wb') as outfile:
             shutil.copyfileobj(response, outfile)
     except ImportError:
         # Python 2
         import urllib
-        urllib.urlretrieve(_get_latest_release_url(), DOWNLOAD_LOCATION)
+        urllib.urlretrieve(_get_latest_release_url(), DOWNLOAD_PATH)
 
 
 def _get_latest_release_url():
     """
     The the URL of the latest release of vswhere.
     """
+    if download_mirror_url:
+        return download_mirror_url
+
     try:
         from urllib.request import urlopen
         with urlopen(LATEST_RELEASE_ENDPOINT) as response:
