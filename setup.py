@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 setuptools.setup(
     name='vswhere',
     version=vswhere.__version__,
-    description='Interface to Microsoft\'s Visual Studio locator tool, vshere',
+    description='Interface to Microsoft\'s Visual Studio locator tool, vswhere',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ChaosinaCan/pyvswhere',

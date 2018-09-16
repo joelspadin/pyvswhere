@@ -11,7 +11,7 @@ import os
 import shutil
 import subprocess
 
-__version__ = '1.1'
+__version__ = '1.1.1'
 __author__ = 'Joel Spadin'
 __license__ = 'MIT'
 
