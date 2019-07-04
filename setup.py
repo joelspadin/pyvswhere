@@ -12,6 +12,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/ChaosinaCan/pyvswhere',
     author='Joel Spadin',
+    author_email='joelspadin@gmail.com',
     license='MIT',
     packages=setuptools.find_packages(),
     classifiers=[
