@@ -44,12 +44,12 @@ def execute(args):
     if not is_property:
         args.extend(['-format', 'json'])
 
-    output = subprocess.check_output(args)
+    output = subprocess.check_output(args).decode('utf-8')
 
     if is_property:
-        return output.decode('utf-8').splitlines()
+        return output.splitlines()
     else:
-        return json.loads(output, encoding='utf-8')
+        return json.loads(output)
 
 
 def find(find_all=False, latest=False, legacy=False, prerelease=False, products=None, prop=None, requires=None, requires_any=False, version=None):
