@@ -11,7 +11,7 @@ import os
 import shutil
 import subprocess
 
-__version__ = '1.1.2'
+__version__ = '1.2.0'
 __author__ = 'Joel Spadin'
 __license__ = 'MIT'
 
@@ -52,35 +52,67 @@ def execute(args):
         return json.loads(output)
 
 
-def find(find_all=False, latest=False, legacy=False, prerelease=False, products=None, prop=None, requires=None, requires_any=False, version=None):
+def find(
+    find=None,
+    find_all=False,
+    latest=False,
+    legacy=False,
+    path=None,
+    prerelease=False,
+    products=None,
+    prop=None,
+    requires=None,
+    requires_any=False,
+    sort=False,
+    version=None,
+):
     """
     Call vswhere and return an array of the results.
 
-    If `find_all` is true, finds all instances even if they are incomplete and may not launch.
+    Selection Options:
+        find_all: If True, finds all instances even if they are incomplete and
+            may not launch.
+        prerelease: If True, also searches prereleases. By default, only
+            releases are searched.
+        products: a list of one or more product IDs to find. Defaults to
+            Community, Professional, and Enterprise if not specified.
+            Specify ['*'] by itself to search all product instances installed.
+            See https://aka.ms/vs/workloads for a list of product IDs.
+        requires: a list of one or more workload component IDs required when
+            finding instances. All specified IDs must be installed unless
+            `requires_any` is True. See https://aka.ms/vs/workloads for a list
+            of workload and component IDs.
+        requires_any: If True, find instances with any one or more workload or
+            component IDs passed to `requires`.
+        version: A version range for instances to find. Example: '[15.0,16.0)'
+            will find versions 15.*.
+        latest: If True, returns only the newest version and last installed.
+        legacy: If True, also searches Visual Studio 2015 and older products.
+            Information is limited. This option cannot be used with either
+            `products` or `requires`.
+        path: Gets the instance for the given file path. Not compatible with any
+            other selection option.
 
-    If `latest` is true, returns only the newest version and last installed.
-
-    If `legacy` is true, also searches Visual Studio 2015 and older products.
-    Information is limited. This option cannot be used with either products or requires.
-
-    If `prerelease` is true, also searches prereleases. By default, only releases are searched.
-
-    `products` is a list of one or more product IDs to find.
-    Defaults to Community, Professional, and Enterprise if not specified.
-    Specify ['*'] by itself to search all product instances installed.
-    See https://aka.ms/vs/workloads for a list of product IDs.
-
-    `prop` is the name of a property to return instead of the full installation details.
-    Use delimiters '.', '/', or '_' to separate object and property names.
-    Example: 'properties.nickname' will return the 'nickname' property under 'properties'.
-
-    `requires` is a list of one or more workload component IDs required when finding instances.
-    All specified IDs must be installed unless `requires_any` is True.
-    See https://aka.ms/vs/workloads for a list of workload and component IDs.
-
-    `version` is a version range for instances to find. Example: '[15.0,16.0)' will find versions 15.*.
+    Output Options:
+        sort: If True, sorts the instances from newest version and last installed
+            to oldest. When used with `find`, first instances are sorted, then
+            files are sorted lexigraphically.
+        prop: The name of a property to return instead of the full installation
+            details. Use delimiters '.', '/', or '_' to separate object and
+            property names. Example: 'properties.nickname' will return the
+            'nickname' property under 'properties'.
+        find: Returns the file paths matching this glob pattern under the
+            installation path. The following patterns are supported:
+            ?  Matches any one character except "\\"
+            *  Matches zero or more characters except "\\"
+            ** Searches the current directory and subdirectories for the
+               remaining search pattern.
     """
     args = []
+
+    if find:
+        args.append('-find')
+        args.append(find)
 
     if find_all:
         args.append('-all')
@@ -90,6 +122,10 @@ def find(find_all=False, latest=False, legacy=False, prerelease=False, products=
 
     if legacy:
         args.append('-legacy')
+
+    if path:
+        args.append('-path')
+        args.append(path)
 
     if prerelease:
         args.append('-prerelease')
@@ -108,6 +144,9 @@ def find(find_all=False, latest=False, legacy=False, prerelease=False, products=
 
     if requires_any:
         args.append('-requiresAny')
+
+    if sort:
+        args.append('-sort')
 
     if version:
         args.append('-version')
