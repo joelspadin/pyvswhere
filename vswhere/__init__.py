@@ -6,12 +6,13 @@ binary installed with Visual Studio. Otherwise, it will download the latest
 release of vswhere from https://github.com/Microsoft/vswhere the first time a
 function is called.
 """
+
 import json
 import os
 import shutil
 import subprocess
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 __author__ = 'Joel Spadin'
 __license__ = 'MIT'
 
@@ -74,12 +75,12 @@ def find(
             may not launch.
         prerelease: If True, also searches prereleases. By default, only
             releases are searched.
-        products: a list of one or more product IDs to find. Defaults to
-            Community, Professional, and Enterprise if not specified.
-            Specify ['*'] by itself to search all product instances installed.
+        products: a product ID or list of one or more product IDs to find.
+            Defaults to Community, Professional, and Enterprise if not specified.
+            Specify '*' by itself to search all product instances installed.
             See https://aka.ms/vs/workloads for a list of product IDs.
-        requires: a list of one or more workload component IDs required when
-            finding instances. All specified IDs must be installed unless
+        requires: a workload component ID or list of one or more IDs required
+            when finding instances. All specified IDs must be installed unless
             `requires_any` is True. See https://aka.ms/vs/workloads for a list
             of workload and component IDs.
         requires_any: If True, find instances with any one or more workload or
@@ -132,7 +133,7 @@ def find(
 
     if products:
         args.append('-products')
-        args.extend(products)
+        _extend_or_append(args, products)
 
     if prop:
         args.append('-property')
@@ -140,7 +141,7 @@ def find(
 
     if requires:
         args.append('-requires')
-        args.extend(requires)
+        _extend_or_append(args, requires)
 
     if requires_any:
         args.append('-requiresAny')
@@ -159,28 +160,38 @@ def find_first(**kwargs):
     """
     Call vswhere and returns only the first result, or None if there are no results.
 
-    See find() for parameters.
+    See find() for keyword arguments.
     """
     return next(iter(find(**kwargs)), None)
 
 
-def get_latest():
+def get_latest(legacy=None, **kwargs):
     """
     Get the information for the latest installed version of Visual Studio.
+
+    Also supports the same selection options as find(), for example to select
+    different products. If the `legacy` argument is not set, it defaults to
+    `True` unless either `products` or `requires` arguments are set.
     """
-    return find_first(latest=True, legacy=True)
+    legacy = _get_legacy_arg(legacy, **kwargs)
+    return find_first(latest=True, legacy=legacy, **kwargs)
 
 
-def get_latest_path():
+def get_latest_path(legacy=None, **kwargs):
     """
     Get the file path to the latest installed version of Visual Studio.
 
     Returns None if no installations could be found.
+
+    Also supports the same selection options as find(), for example to select
+    different products. If the `legacy` argument is not set, it defaults to
+    `True` unless either `products` or `requires` arguments are set.
     """
-    return find_first(latest=True, legacy=True, prop='installationPath')
+    legacy = _get_legacy_arg(legacy, **kwargs)
+    return find_first(latest=True, legacy=legacy, prop='installationPath', **kwargs)
 
 
-def get_latest_version():
+def get_latest_version(legacy=None, **kwargs):
     """
     Get the version string of the latest installed version of Visual Studio.
 
@@ -191,16 +202,25 @@ def get_latest_version():
     the minor version set to 0, for example: '14.0'.
 
     Returns None if no installations could be found.
-    """
-    return find_first(latest=True, legacy=True, prop='installationVersion')
 
-def get_latest_major_version():
+    Also supports the same selection options as find(), for example to select
+    different products. If the `legacy` argument is not set, it defaults to
+    `True` unless either `products` or `requires` arguments are set.
+    """
+    legacy = _get_legacy_arg(legacy, **kwargs)
+    return find_first(latest=True, legacy=legacy, prop='installationVersion', **kwargs)
+
+def get_latest_major_version(**kwargs):
     """
     Get the major version of the latest installed version of Visual Studio as an int.
 
     Returns 0 if no installations could be found.
+
+    Also supports the same selection options as find(), for example to select
+    different products. If the `legacy` argument is not set, it defaults to
+    `True` unless either `products` or `requires` arguments are set.
     """
-    return int(next(iter(get_latest_version().split('.')), '0'))
+    return int(next(iter(get_latest_version(**kwargs).split('.')), '0'))
 
 
 def get_vswhere_path():
@@ -242,6 +262,20 @@ def set_download_mirror(url):
     """
     global download_mirror_url
     download_mirror_url = url
+
+
+def _extend_or_append(lst, value):
+    if isinstance(value, str):
+        lst.append(value)
+    else:
+        lst.extend(value)
+
+
+def _get_legacy_arg(legacy, **kwargs):
+    if legacy is None:
+        return 'products' not in kwargs and 'requires' not in kwargs
+    else:
+        return legacy
 
 
 def _download_vswhere():
