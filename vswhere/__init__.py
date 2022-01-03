@@ -303,7 +303,7 @@ def _get_latest_release_url():
     try:
         from urllib.request import urlopen
         with urlopen(LATEST_RELEASE_ENDPOINT) as response:
-            release = json.loads(response.read(), encoding=response.headers.get_content_charset() or 'utf-8')
+            release = json.loads(response.read())
     except ImportError:
         # Python 2
         import urllib2
