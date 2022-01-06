@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+* [@maksim-0](https://github.com/maksim-0): Fixed use of a deprecated argument which was removed in Python 3.9.
+
 ## 1.3.0
 
 * The `products` and `requires` arguments to `vswhere.find()` can now be a single string or a list.
